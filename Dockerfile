@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/boxlyd 
 
 # ---- runtime ----
 # distroless static + nonroot: tiny, no shell, runs as uid 65532, ships CA certs.
-FROM gcr.io/distroless/static-nonroot:latest
+FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/boxlyd /usr/local/bin/boxlyd
 COPY --from=build /out/boxly  /usr/local/bin/boxly
 
