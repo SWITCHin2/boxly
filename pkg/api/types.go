@@ -1,5 +1,5 @@
-// Package api holds the wire types shared between the ongod control plane
-// and the ongo CLI client. It must not import internal packages so that
+// Package api holds the wire types shared between the boxlyd control plane
+// and the boxly CLI client. It must not import internal packages so that
 // pkg/client (used by the CLI) can depend on it.
 package api
 

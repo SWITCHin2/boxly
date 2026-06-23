@@ -12,10 +12,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/devtron-labs/ongo/internal/demand"
-	"github.com/devtron-labs/ongo/internal/settings"
-	"github.com/devtron-labs/ongo/internal/template"
-	"github.com/devtron-labs/ongo/internal/vm"
+	"github.com/SWITCHin2/boxly/internal/demand"
+	"github.com/SWITCHin2/boxly/internal/settings"
+	"github.com/SWITCHin2/boxly/internal/template"
+	"github.com/SWITCHin2/boxly/internal/vm"
 )
 
 // Reconciler maintains per-template warm pools sized from live demand. Pool

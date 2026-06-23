@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Server holds the ongod control-plane configuration. Env values seed the
+// Server holds the boxlyd control-plane configuration. Env values seed the
 // defaults; many are overridable at runtime via the admin console (ConfigMap).
 type Server struct {
 	Addr            string        // listen address, e.g. ":8080"
@@ -27,13 +27,13 @@ type Server struct {
 	Kubeconfig      string        // explicit kubeconfig path (optional)
 }
 
-// LoadServer reads the ongod configuration from the environment.
+// LoadServer reads the boxlyd configuration from the environment.
 func LoadServer() Server {
 	return Server{
 		Addr:            env("BOXLY_ADDR", ":8080"),
 		Token:           env("BOXLY_TOKEN", "dev-secret"),
 		AdminToken:      env("BOXLY_ADMIN_TOKEN", "admin-secret"),
-		Namespace:       env("BOXLY_NAMESPACE", "ongo"),
+		Namespace:       env("BOXLY_NAMESPACE", "boxly"),
 		PoolMin:         envInt("BOXLY_POOL_MIN", 0),
 		PoolMax:         envInt("BOXLY_POOL_MAX", 5),
 		PoolDecay:       envFloat("BOXLY_POOL_DECAY", 0.7),
@@ -46,9 +46,9 @@ func LoadServer() Server {
 	}
 }
 
-// CLI holds the ongo client configuration.
+// CLI holds the boxly client configuration.
 type CLI struct {
-	Server string // base URL of ongod, e.g. http://localhost:8080
+	Server string // base URL of boxlyd, e.g. http://localhost:8080
 	Token  string // bearer token
 }
 

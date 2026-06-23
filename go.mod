@@ -1,4 +1,4 @@
-module github.com/devtron-labs/ongo
+module github.com/SWITCHin2/boxly
 
 go 1.26.1
 

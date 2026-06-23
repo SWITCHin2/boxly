@@ -16,7 +16,7 @@ func newAdminCmd() *cobra.Command {
 		Short: "Open the admin web console",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			url := strings.TrimRight(flagServer, "/") + "/admin"
-			fmt.Println("OnGo admin console:", url)
+			fmt.Println("Boxly admin console:", url)
 			fmt.Println("Sign in with your admin token (BOXLY_ADMIN_TOKEN).")
 			if open {
 				_ = openBrowser(url)

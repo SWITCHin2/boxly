@@ -1,6 +1,6 @@
-// Package tui is the persistent full-screen dashboard launched by bare `ongo`.
+// Package tui is the persistent full-screen dashboard launched by bare `boxly`.
 // It lists the user's boxes live and lets them create / connect / delete
-// without leaving the screen. Connecting hands the terminal to `ongo ssh` via
+// without leaving the screen. Connecting hands the terminal to `boxly ssh` via
 // Bubble Tea's ExecProcess and returns to the dashboard when the shell exits.
 package tui
 
@@ -16,8 +16,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/devtron-labs/ongo/pkg/api"
-	"github.com/devtron-labs/ongo/pkg/client"
+	"github.com/SWITCHin2/boxly/pkg/api"
+	"github.com/SWITCHin2/boxly/pkg/client"
 )
 
 var (
@@ -505,7 +505,7 @@ func axeTick() tea.Cmd {
 	return tea.Tick(130*time.Millisecond, func(time.Time) tea.Msg { return axeMsg{} })
 }
 
-// runSub suspends the TUI, runs `ongo <args>` attached to the terminal (so the
+// runSub suspends the TUI, runs `boxly <args>` attached to the terminal (so the
 // raw-mode shell / picker works), then resumes and refreshes.
 func (m model) runSub(args ...string) tea.Cmd {
 	full := append(args, "--server", m.server, "--token", m.token)

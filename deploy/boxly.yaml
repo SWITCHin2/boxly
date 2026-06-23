@@ -1,0 +1,155 @@
+# Boxly — complete deploy manifest (everything in one file).
+#
+#   kubectl apply -f deploy/boxly.yaml
+#
+# Contents: namespace, the two ServiceAccounts (boxlyd control plane + boxly-vm
+# per-box identity), cluster RBAC (boxlyd can create namespaces + manage boxes
+# anywhere), NetworkPolicy, runtime ConfigMap + Secret, and the boxlyd
+# Deployment + Service. The pod runs as the `boxlyd` ServiceAccount:
+#
+#       spec.template.spec.serviceAccountName: boxlyd
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: boxly
+  labels:
+    boxly.dev/managed: "true"
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+---
+# Identity the user boxes run as: no API permissions, token never mounted.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: boxly-vm
+  namespace: boxly
+automountServiceAccountToken: false
+---
+# Identity the control plane (boxlyd) runs as.  <-- attach this to the pod.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: boxlyd
+  namespace: boxly
+  labels: { app: boxlyd }
+---
+# Cluster-scoped so boxlyd can CREATE namespaces and manage boxes in any namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: boxlyd
+  labels: { app: boxlyd }
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/exec", "pods/log", "persistentvolumeclaims",
+                "configmaps", "secrets", "serviceaccounts", "services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: boxlyd
+  labels: { app: boxlyd }
+subjects:
+  - kind: ServiceAccount
+    name: boxlyd
+    namespace: boxly
+roleRef:
+  kind: ClusterRole
+  name: boxlyd
+  apiGroup: rbac.authorization.k8s.io
+---
+# Tenant isolation: box pods accept no inbound pod-network traffic.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: boxly-vm-deny-ingress
+  namespace: boxly
+spec:
+  podSelector:
+    matchLabels: { boxly.dev/managed: "true" }
+  policyTypes: ["Ingress"]
+  ingress: []
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boxlyd-config
+  namespace: boxly
+data:
+  BOXLY_ADDR: ":8080"
+  BOXLY_NAMESPACE: "boxly"
+  BOXLY_POOL_MIN: "0"
+  BOXLY_POOL_MAX: "5"
+  BOXLY_POOL_DECAY: "0.7"
+  BOXLY_DEFAULT_IMAGE: "ubuntu:24.04"
+  BOXLY_DEFAULT_TTL: "1h"
+  BOXLY_USER_DAYS: "5"
+  BOXLY_MAX_USER_DAYS: "30"
+  # BOXLY_PULL_SECRETS: "my-registry"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: boxlyd-secrets
+  namespace: boxly
+type: Opaque
+stringData:
+  BOXLY_TOKEN: "change-me-user-token"
+  BOXLY_ADMIN_TOKEN: "change-me-admin"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: boxlyd
+  namespace: boxly
+  labels: { app: boxlyd }
+spec:
+  replicas: 1                       # single writer (no DB; pool reconciler)
+  selector: { matchLabels: { app: boxlyd } }
+  template:
+    metadata:
+      labels: { app: boxlyd }
+    spec:
+      serviceAccountName: boxlyd    # <-- the field that gives the pod its access
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: boxlyd
+          image: REGISTRY/boxly:latest   # ← Devtron CI sets this
+          ports: [{ containerPort: 8080, name: http }]
+          envFrom:
+            - configMapRef: { name: boxlyd-config }
+            - secretRef: { name: boxlyd-secrets }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+          readinessProbe: { httpGet: { path: /healthz, port: 8080 }, initialDelaySeconds: 3 }
+          livenessProbe:  { httpGet: { path: /healthz, port: 8080 }, periodSeconds: 15 }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: "1",  memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: boxlyd
+  namespace: boxly
+  labels: { app: boxlyd }
+spec:
+  selector: { app: boxlyd }
+  ports:
+    - { name: http, port: 80, targetPort: 8080 }
+# Expose /admin and /pools via an Ingress (TLS at the ingress).

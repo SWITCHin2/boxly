@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/devtron-labs/ongo/internal/vm"
+	"github.com/SWITCHin2/boxly/internal/vm"
 )
 
 // Janitor sweeps for expired sandboxes on an interval.

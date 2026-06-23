@@ -1,4 +1,4 @@
-// Package settings holds ongod's runtime-tunable configuration: pool bounds,
+// Package settings holds boxlyd's runtime-tunable configuration: pool bounds,
 // decay, defaults, image pull secrets and custom templates. Values are seeded
 // from env at boot, editable live via the admin API, and persisted to a
 // ConfigMap so they survive restarts.
@@ -7,7 +7,7 @@ package settings
 import (
 	"sync"
 
-	"github.com/devtron-labs/ongo/internal/template"
+	"github.com/SWITCHin2/boxly/internal/template"
 )
 
 // Settings is the full editable configuration (JSON-serialized into the ConfigMap).
@@ -18,7 +18,7 @@ type Settings struct {
 	DefaultTTLSeconds int                 `json:"defaultTtlSeconds"`
 	DefaultImage      string              `json:"defaultImage"`
 	PullSecrets       []string            `json:"pullSecrets"`     // existing secret names to reference
-	PullSecretYAML    string              `json:"pullSecretYaml"`  // a k8s Secret manifest OnGo applies
+	PullSecretYAML    string              `json:"pullSecretYaml"`  // a k8s Secret manifest Boxly applies
 	Templates         []template.Template `json:"templates"`       // custom (non-builtin) only
 	Users             []User              `json:"users"`           // per-user API tokens (multi-tenant)
 	DefaultUserDays   int                 `json:"defaultUserDays"` // onboarding validity for a new user

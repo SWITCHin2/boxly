@@ -19,9 +19,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 
-	"github.com/devtron-labs/ongo/internal/k8s"
-	"github.com/devtron-labs/ongo/internal/template"
-	"github.com/devtron-labs/ongo/pkg/api"
+	"github.com/SWITCHin2/boxly/internal/k8s"
+	"github.com/SWITCHin2/boxly/internal/template"
+	"github.com/SWITCHin2/boxly/pkg/api"
 )
 
 // ErrNotFound is returned when a VM id matches no managed object.

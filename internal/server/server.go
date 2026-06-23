@@ -1,4 +1,4 @@
-// Package server implements the ongod control-plane HTTP API.
+// Package server implements the boxlyd control-plane HTTP API.
 package server
 
 import (
@@ -10,13 +10,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/devtron-labs/ongo/internal/auth"
-	"github.com/devtron-labs/ongo/internal/demand"
-	"github.com/devtron-labs/ongo/internal/k8s"
-	"github.com/devtron-labs/ongo/internal/settings"
-	"github.com/devtron-labs/ongo/internal/template"
-	"github.com/devtron-labs/ongo/internal/vm"
-	"github.com/devtron-labs/ongo/pkg/api"
+	"github.com/SWITCHin2/boxly/internal/auth"
+	"github.com/SWITCHin2/boxly/internal/demand"
+	"github.com/SWITCHin2/boxly/internal/k8s"
+	"github.com/SWITCHin2/boxly/internal/settings"
+	"github.com/SWITCHin2/boxly/internal/template"
+	"github.com/SWITCHin2/boxly/internal/vm"
+	"github.com/SWITCHin2/boxly/pkg/api"
 )
 
 // Server holds the dependencies shared by the HTTP handlers.

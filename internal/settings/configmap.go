@@ -14,7 +14,7 @@ import (
 )
 
 // ConfigMapName is where runtime settings are persisted.
-const ConfigMapName = "ongo-config"
+const ConfigMapName = "boxly-config"
 
 const settingsKey = "settings.json"
 
@@ -73,7 +73,7 @@ func Saver(cs kubernetes.Interface, namespace string) func(Settings) error {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      ConfigMapName,
 				Namespace: namespace,
-				Labels:    map[string]string{"ongo.dev/managed": "true"},
+				Labels:    map[string]string{"boxly.dev/managed": "true"},
 			},
 			Data: map[string]string{settingsKey: string(raw)},
 		}

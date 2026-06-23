@@ -1,4 +1,4 @@
-// Command ongo is the OnGo CLI client.
+// Command boxly is the Boxly CLI client.
 package main
 
 import (
@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/devtron-labs/ongo/internal/cli"
+	"github.com/SWITCHin2/boxly/internal/cli"
 )
 
 func main() {

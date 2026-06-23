@@ -10,8 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
-	"github.com/devtron-labs/ongo/internal/template"
-	"github.com/devtron-labs/ongo/pkg/api"
+	"github.com/SWITCHin2/boxly/internal/template"
+	"github.com/SWITCHin2/boxly/pkg/api"
 )
 
 // workspaceMount is where the writable workspace lives inside every VM.
@@ -129,7 +129,7 @@ func RenderManifest(namespace string, tmpl template.Template) (string, error) {
 	return string(out), err
 }
 
-// hardenPod enforces OnGo's non-negotiable fields on any pod (generated or
+// hardenPod enforces Boxly's non-negotiable fields on any pod (generated or
 // free-hand), leaving the user's image/command/env/resources/extra-volumes alone.
 func hardenPod(pod *corev1.Pod, namespace, id, name string, typ api.VMType, owner, pool, templateID string, pullSecrets []string, anns map[string]string) {
 	// Identity & metadata.

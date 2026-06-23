@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/devtron-labs/ongo/pkg/api"
+	"github.com/SWITCHin2/boxly/pkg/api"
 )
 
 func newVMCmd() *cobra.Command {

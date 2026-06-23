@@ -1,5 +1,5 @@
 // Package k8s wires up a Kubernetes client. It prefers in-cluster config
-// (when ongod runs as a pod) and falls back to a kubeconfig file for local
+// (when boxlyd runs as a pod) and falls back to a kubeconfig file for local
 // development against minikube.
 package k8s
 

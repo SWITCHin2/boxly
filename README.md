@@ -84,7 +84,7 @@ It runs on **your own Kubernetes** — your cloud, your data, your bill.
  boxly (CLI / TUI)  ──HTTPS + bearer token──▶  boxlyd (control plane)  ──client-go──▶  Kubernetes
    create/list/ssh/exec/run                      REST API + exec(ws) bridge              warm Pods / persistent
    live dashboard (TUI)                           predictive pool + TTL janitor          Deployments + PVCs
-   /admin (web), /pools (public)                  per-user RBAC, ConfigMap state         namespace: ongo
+   /admin (web), /pools (public)                  per-user RBAC, ConfigMap state         namespace: boxly
 ```
 
 - **`boxlyd`** — the control plane. REST API, websocket exec/ssh bridge, the warm-pool reconciler,
@@ -92,7 +92,7 @@ It runs on **your own Kubernetes** — your cloud, your data, your bill.
 - **`boxly`** — the CLI. Bare `boxly` opens the full-screen TUI dashboard; subcommands cover
   `vm create/list/rm/info`, `ssh`, `exec`, `launch`, `admin`, `dash`.
 - **State lives in Kubernetes** — boxes are labelled Pods/Deployments; runtime config + custom
-  templates + users persist in a single `ongo-config` ConfigMap. No database.
+  templates + users persist in a single `boxly-config` ConfigMap. No database.
 
 ## ⚡ Quickstart
 
@@ -101,10 +101,10 @@ with k3s works great (no Docker Desktop):
 
 ```bash
 colima start --runtime containerd --kubernetes --vm-type=vz   # or: minikube start
-kubectl apply -f deploy/00-namespace-rbac.yaml                # namespace, SA, RBAC, NetworkPolicy
+kubectl apply -f deploy/boxly.yaml                # namespace, SA, RBAC, NetworkPolicy
 
 # Terminal 1 — control plane (uses your kubeconfig locally)
-BOXLY_TOKEN=dev-secret BOXLY_ADMIN_TOKEN=admin-secret BOXLY_NAMESPACE=ongo \
+BOXLY_TOKEN=dev-secret BOXLY_ADMIN_TOKEN=admin-secret BOXLY_NAMESPACE=boxly \
   go run ./cmd/boxlyd
 ```
 
@@ -177,7 +177,7 @@ demand-driven, auto-tuning, in real time. Backed by aggregate-only data (no name
 ## ⚙ Configuration
 
 `boxlyd` reads env at boot; most values are then **runtime-editable in the admin console** and
-persisted to the `ongo-config` ConfigMap (which overrides env on subsequent boots).
+persisted to the `boxly-config` ConfigMap (which overrides env on subsequent boots).
 
 **Secret (set strong values):**
 | Var | Required | Meaning |
@@ -188,7 +188,7 @@ persisted to the `ongo-config` ConfigMap (which overrides env on subsequent boot
 **Config (optional — seed defaults):**
 | Var | Default | Meaning |
 |---|---|---|
-| `BOXLY_NAMESPACE` | `ongo` | namespace boxes are created in |
+| `BOXLY_NAMESPACE` | `boxly` | namespace boxes are created in |
 | `BOXLY_ADDR` | `:8080` | listen address |
 | `BOXLY_POOL_MIN` / `BOXLY_POOL_MAX` | `0` / `5` | warm-pool bounds per box type |
 | `BOXLY_POOL_DECAY` | `0.7` | demand EWMA decay |
@@ -208,18 +208,18 @@ docker build -t <registry>/boxly:latest .
 
 **On Kubernetes** (reference manifests in `deploy/`):
 ```bash
-kubectl apply -f deploy/00-namespace-rbac.yaml   # namespace + ongod SA + RBAC + NetworkPolicy
+kubectl apply -f deploy/boxly.yaml   # namespace + boxlyd SA + RBAC + NetworkPolicy
 # edit the image + tokens, then:
-kubectl apply -f deploy/10-boxlyd.yaml           # Deployment + Service + ConfigMap + Secret
+kubectl apply -f deploy/boxly.yaml           # Deployment + Service + ConfigMap + Secret
 ```
-The pod runs as the **`ongod`** ServiceAccount (RBAC scoped to pods/pvc/configmaps/secrets/
+The pod runs as the **`boxlyd`** ServiceAccount (RBAC scoped to pods/pvc/configmaps/secrets/
 pods-exec/deployments in its namespace) and uses in-cluster config — no kubeconfig needed.
 
 **With [Devtron](https://docs.devtron.ai/):** create an app → *Build from source* with
 **Dockerfile path `Dockerfile`** and **build context `.`** → Deployment template with
-**containerPort `8080`** and **`serviceAccountName: ongod`** → map the env above via a **ConfigMap**
+**containerPort `8080`** and **`serviceAccountName: boxlyd`** → map the env above via a **ConfigMap**
 (non-sensitive) + **Secret** (tokens) mounted as environment variables → expose `/admin` and
-`/pools` via an Ingress with TLS. Apply `deploy/00-namespace-rbac.yaml` once in the target namespace
+`/pools` via an Ingress with TLS. Apply `deploy/boxly.yaml` once in the target namespace
 first (Devtron's chart doesn't create the Role/RoleBinding).
 
 > Run a **single replica** — there's no DB and the pool reconciler assumes one writer.

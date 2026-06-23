@@ -1,4 +1,4 @@
-// Command ongod is the OnGo control-plane microservice: it exposes the VM API
+// Command boxlyd is the Boxly control-plane microservice: it exposes the VM API
 // and provisions Kubernetes workloads, keeps the warm pool full, and reaps
 // expired sandboxes.
 package main
@@ -12,15 +12,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/devtron-labs/ongo/internal/config"
-	"github.com/devtron-labs/ongo/internal/demand"
-	"github.com/devtron-labs/ongo/internal/janitor"
-	"github.com/devtron-labs/ongo/internal/k8s"
-	"github.com/devtron-labs/ongo/internal/pool"
-	"github.com/devtron-labs/ongo/internal/server"
-	"github.com/devtron-labs/ongo/internal/settings"
-	"github.com/devtron-labs/ongo/internal/template"
-	"github.com/devtron-labs/ongo/internal/vm"
+	"github.com/SWITCHin2/boxly/internal/config"
+	"github.com/SWITCHin2/boxly/internal/demand"
+	"github.com/SWITCHin2/boxly/internal/janitor"
+	"github.com/SWITCHin2/boxly/internal/k8s"
+	"github.com/SWITCHin2/boxly/internal/pool"
+	"github.com/SWITCHin2/boxly/internal/server"
+	"github.com/SWITCHin2/boxly/internal/settings"
+	"github.com/SWITCHin2/boxly/internal/template"
+	"github.com/SWITCHin2/boxly/internal/vm"
 )
 
 func main() {

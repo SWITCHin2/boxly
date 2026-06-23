@@ -1,5 +1,5 @@
-// Package client is the Go HTTP/websocket client the ongo CLI uses to talk to
-// the ongod control plane.
+// Package client is the Go HTTP/websocket client the boxly CLI uses to talk to
+// the boxlyd control plane.
 package client
 
 import (
@@ -15,10 +15,10 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/devtron-labs/ongo/pkg/api"
+	"github.com/SWITCHin2/boxly/pkg/api"
 )
 
-// Client calls the ongod API with a static bearer token.
+// Client calls the boxlyd API with a static bearer token.
 type Client struct {
 	base  string
 	token string
@@ -98,7 +98,7 @@ func (c *Client) ExecConn(ctx context.Context, id string, cmd []string, tty bool
 
 	conn, _, err := websocket.Dial(ctx, u.String(), &websocket.DialOptions{
 		HTTPHeader:   http.Header{"Authorization": {"Bearer " + c.token}},
-		Subprotocols: []string{"ongo.exec.v1"},
+		Subprotocols: []string{"boxly.exec.v1"},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("dial exec: %w", err)
@@ -136,7 +136,7 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 		if e.Error == "" {
 			e.Error = resp.Status
 		}
-		return fmt.Errorf("ongod: %s", e.Error)
+		return fmt.Errorf("boxlyd: %s", e.Error)
 	}
 	if out != nil {
 		return json.NewDecoder(resp.Body).Decode(out)

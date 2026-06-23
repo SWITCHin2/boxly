@@ -9,14 +9,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 
-	"github.com/devtron-labs/ongo/internal/k8s"
-	"github.com/devtron-labs/ongo/internal/template"
-	"github.com/devtron-labs/ongo/pkg/api"
+	"github.com/SWITCHin2/boxly/internal/k8s"
+	"github.com/SWITCHin2/boxly/internal/template"
+	"github.com/SWITCHin2/boxly/pkg/api"
 )
 
 func newTestManager() *Manager {
 	cs := fake.NewSimpleClientset()
-	return NewManager(&k8s.Client{Clientset: cs}, "ongo", "ubuntu:24.04", time.Hour, nil)
+	return NewManager(&k8s.Client{Clientset: cs}, "boxly", "ubuntu:24.04", time.Hour, nil)
 }
 
 func TestSandboxColdCreateListDelete(t *testing.T) {
@@ -110,23 +110,23 @@ func TestPersistentCreatesDeploymentAndPVC(t *testing.T) {
 	if vm.Type != api.TypePersistent {
 		t.Fatalf("unexpected type: %+v", vm)
 	}
-	if _, err := m.client.Clientset.AppsV1().Deployments("ongo").Get(ctx, resourceName(vm.ID), metav1.GetOptions{}); err != nil {
+	if _, err := m.client.Clientset.AppsV1().Deployments("boxly").Get(ctx, resourceName(vm.ID), metav1.GetOptions{}); err != nil {
 		t.Fatalf("deployment missing: %v", err)
 	}
-	if _, err := m.client.Clientset.CoreV1().PersistentVolumeClaims("ongo").Get(ctx, resourceName(vm.ID), metav1.GetOptions{}); err != nil {
+	if _, err := m.client.Clientset.CoreV1().PersistentVolumeClaims("boxly").Get(ctx, resourceName(vm.ID), metav1.GetOptions{}); err != nil {
 		t.Fatalf("pvc missing: %v", err)
 	}
 
 	if err := m.Delete(ctx, vm.ID, ""); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
-	if _, err := m.client.Clientset.CoreV1().PersistentVolumeClaims("ongo").Get(ctx, resourceName(vm.ID), metav1.GetOptions{}); err == nil {
+	if _, err := m.client.Clientset.CoreV1().PersistentVolumeClaims("boxly").Get(ctx, resourceName(vm.ID), metav1.GetOptions{}); err == nil {
 		t.Fatalf("expected pvc deleted")
 	}
 }
 
 func TestHardenedPodSpec(t *testing.T) {
-	pod := BuildPod("ongo", "abcd1234", "x", "ubuntu:24.04", api.TypeSandbox, "default", PoolClaimed, "normal", nil, nil)
+	pod := BuildPod("boxly", "abcd1234", "x", "ubuntu:24.04", api.TypeSandbox, "default", PoolClaimed, "normal", nil, nil)
 	sc := pod.Spec.SecurityContext
 	if sc == nil || sc.RunAsNonRoot == nil || !*sc.RunAsNonRoot {
 		t.Fatal("pod must run as non-root")

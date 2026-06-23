@@ -13,10 +13,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
 
-	"github.com/devtron-labs/ongo/internal/auth"
+	"github.com/SWITCHin2/boxly/internal/auth"
 )
 
-// Wire protocol between CLI and ongod over the exec websocket:
+// Wire protocol between CLI and boxlyd over the exec websocket:
 //   - Binary messages carry raw stdin (client->server) / stdout (server->client).
 //   - Text messages carry control JSON, currently only terminal resize.
 type controlMsg struct {
@@ -44,7 +44,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		Subprotocols: []string{"ongo.exec.v1"},
+		Subprotocols: []string{"boxly.exec.v1"},
 	})
 	if err != nil {
 		return

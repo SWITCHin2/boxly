@@ -25,7 +25,7 @@ type Template struct {
 	WelcomeMsg  string `json:"welcomeMsg,omitempty"`  // printed before dropping into the shell
 
 	// Manifest is an optional free-hand Kubernetes Pod YAML. When set it is used
-	// as the base for every box of this template; OnGo re-applies its safety
+	// as the base for every box of this template; Boxly re-applies its safety
 	// guardrails (non-root, dropped caps, SA, labels, workspace) on top, so the
 	// admin controls image/env/resources/volumes without breaking isolation.
 	Manifest string `json:"manifest,omitempty"`
@@ -39,7 +39,7 @@ type Template struct {
 	Builtin bool `json:"builtin,omitempty"` // true for the shipped catalog (read-only id)
 }
 
-// builtins is the catalog shipped with OnGo. Admins can add custom templates on
+// builtins is the catalog shipped with Boxly. Admins can add custom templates on
 // top of these at runtime (see the registry).
 var builtins = []Template{
 	{
@@ -68,7 +68,7 @@ cd /work
 if [ ! -d playground/.git ]; then
   mkdir -p playground && cd playground
   git init -q
-  git config user.email learner@ongo.dev
+  git config user.email learner@boxly.dev
   git config user.name learner
   printf 'chapter one\n' > story.txt && git add . && git commit -qm 'first commit'
   printf 'chapter two\n' >> story.txt && git commit -qam 'second commit'

@@ -6,7 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/devtron-labs/ongo/pkg/api"
+	"github.com/SWITCHin2/boxly/pkg/api"
 )
 
 func toVMFromPod(p *corev1.Pod) api.VM {

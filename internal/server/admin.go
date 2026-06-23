@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/devtron-labs/ongo/internal/settings"
-	"github.com/devtron-labs/ongo/internal/template"
-	"github.com/devtron-labs/ongo/internal/vm"
-	"github.com/devtron-labs/ongo/pkg/api"
+	"github.com/SWITCHin2/boxly/internal/settings"
+	"github.com/SWITCHin2/boxly/internal/template"
+	"github.com/SWITCHin2/boxly/internal/vm"
+	"github.com/SWITCHin2/boxly/pkg/api"
 )
 
 //go:embed admin/index.html
