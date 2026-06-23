@@ -1,0 +1,6 @@
+bin/
+.git/
+*.log
+*.md
+.DS_Store
+deploy/

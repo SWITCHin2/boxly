@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BOXLY · Live Pools</title>
+<link rel="icon" href="/admin/logo">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{ --pixel:"Press Start 2P",ui-monospace,monospace; --body:"VT323",ui-monospace,monospace;
+    --wood:#6b4a2b; --wood-d:#3f2a18; --wood-l:#8a6135; --ok:#46c93a; --err:#d84b4b; }
+  *{box-sizing:border-box;} html,body{height:100%;}
+  body{ margin:0; font-family:var(--body); font-size:19px; color:#e8e2d4; background:#1b1712;
+    image-rendering:pixelated; -webkit-font-smoothing:none;
+    background-image:repeating-linear-gradient(0deg,#1b1712 0 2px,#191510 2px 4px); }
+  .px{ font-family:var(--pixel); }
+  .wrap{ max-width:1080px; margin:0 auto; padding:34px 20px 60px; }
+  .hero{ text-align:center; margin-bottom:8px; }
+  .hero img{ width:120px; height:104px; object-fit:contain; image-rendering:pixelated;
+    filter:drop-shadow(0 5px 0 rgba(0,0,0,.4)) drop-shadow(0 0 12px rgba(255,200,90,.4)); }
+  .hero h1{ font-family:var(--pixel); font-size:34px; margin:6px 0 0; letter-spacing:2px;
+    color:#ffe1a8; text-shadow:4px 4px 0 #000, 0 0 16px rgba(255,200,90,.5); }
+  .hero h2{ font-family:var(--pixel); font-size:13px; color:#9be08a; margin:14px 0 2px; }
+  .hero p{ color:#cdbf9f; margin:6px 0 0; }
+  .board{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:16px 0 24px; }
+  .board .s{ font-family:var(--pixel); font-size:9px; color:#ffe9a8; background:var(--wood-d); border:2px solid #1f130a; padding:7px 10px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(238px,1fr)); gap:14px; }
+  .card{ padding:13px; border:3px solid; border-color:#373737 #c6c6c6 #c6c6c6 #373737; background:#6f6f6f; display:flex; flex-direction:column; gap:9px; }
+  .hd{ display:flex; gap:9px; align-items:center; }
+  .ico{ width:30px; height:30px; }
+  .nm{ font-size:20px; color:#fff; text-shadow:2px 2px 0 #000; line-height:1.05; }
+  .sub{ font-size:13px; color:#b7ad95; font-family:ui-monospace,monospace; }
+  .stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .st{ text-align:center; background:rgba(0,0,0,.22); padding:6px 2px; }
+  .st b{ display:block; font-size:22px; color:#fff; line-height:1; } .st span{ font-size:11px; color:#b7ad95; }
+  .cap{ height:12px; background:#222; border:2px solid #000; margin-top:auto; } .cap>i{ display:block; height:100%; background:var(--ok); }
+  .foot{ text-align:center; color:#7f9a76; font-size:16px; margin-top:26px; }
+  .live{ color:#9be08a; }
+  .empty{ text-align:center; color:#cdbf9f; padding:40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <img src="/admin/logo" alt="BOXLY">
+    <h1>BOXLY</h1>
+    <h2>LIVE POOLS</h2>
+    <p>Watch the warm pools breathe — demand-driven, auto-tuning, in real time.</p>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="grid" id="grid"><div class="empty">loading…</div></div>
+  <div class="foot"><span class="live" id="dot">●</span> auto-refreshing every 2s · this is what every Boxly user is sharing</div>
+</div>
+<script>
+const CRATE = `<svg class="ico" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <rect x="1" y="1" width="14" height="14" fill="#7a5230"/><rect x="1" y="1" width="14" height="2" fill="#9a6e3e"/>
+  <rect x="1" y="13" width="14" height="2" fill="#4f351d"/><rect x="1" y="7" width="14" height="2" fill="#4f351d"/>
+  <rect x="7" y="1" width="2" height="14" fill="#4f351d"/><rect x="1" y="1" width="14" height="14" fill="none" stroke="#2f1f10" stroke-width="1"/></svg>`;
+function esc(s){return(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+async function tick(){
+  try{
+    const [pools,stats] = await Promise.all([
+      fetch('/pools-data').then(r=>r.json()),
+      fetch('/admin/stats').then(r=>r.json()),
+    ]);
+    document.getElementById('board').innerHTML =
+      `<span class="s">${stats.instances} ACTIVE</span><span class="s">${stats.owners} OWNERS</span><span class="s">${stats.types} TYPES</span>`;
+    document.getElementById('grid').innerHTML = pools.map(p=>{
+      const total=p.claimed+p.ready, cap= total>0?Math.round(p.claimed/total*100):0;
+      return `<div class="card">
+        <div class="hd">${CRATE}<div><div class="nm">${esc(p.title)}</div><div class="sub">${esc(p.id)}</div></div></div>
+        <div class="stats">
+          <div class="st"><b>${p.warm}</b><span>WAITING</span></div>
+          <div class="st"><b>${p.claimed}</b><span>OCCUPIED</span></div>
+          <div class="st"><b>${p.desired}</b><span>DESIRED</span></div>
+        </div>
+        <div class="cap"><i style="width:${cap}%;background:${cap>85?'var(--err)':'var(--ok)'}"></i></div>
+      </div>`;}).join('') || '<div class="empty">no box types yet</div>';
+    const d=document.getElementById('dot'); d.style.opacity = d.style.opacity==='0.3'?'1':'0.3';
+  }catch(e){}
+}
+tick(); setInterval(tick, 2000);
+</script>
+</body>
+</html>

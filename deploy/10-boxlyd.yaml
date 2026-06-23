@@ -1,0 +1,79 @@
+# Reference in-cluster deployment of the Boxly control plane (boxlyd).
+# Prereq: kubectl apply -f deploy/00-namespace-rbac.yaml  (namespace + ongod SA + RBAC + NetworkPolicy)
+# In Devtron you don't apply this directly — it documents the shape Devtron's
+# deployment template + ConfigMap + Secret must produce (see notes at bottom).
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boxlyd-config
+  namespace: ongo
+data:
+  BOXLY_ADDR: ":8080"
+  BOXLY_NAMESPACE: "ongo"        # namespace boxlyd manages (usually its own)
+  BOXLY_POOL_MIN: "0"
+  BOXLY_POOL_MAX: "5"
+  BOXLY_POOL_DECAY: "0.7"
+  BOXLY_DEFAULT_IMAGE: "ubuntu:24.04"
+  BOXLY_DEFAULT_TTL: "1h"
+  BOXLY_USER_DAYS: "5"
+  BOXLY_MAX_USER_DAYS: "30"
+  # BOXLY_PULL_SECRETS: "my-registry"   # optional, comma-separated
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: boxlyd-secrets
+  namespace: ongo
+type: Opaque
+stringData:
+  BOXLY_TOKEN: "change-me-user-token"     # user API token (give to users / per-user tokens via admin)
+  BOXLY_ADMIN_TOKEN: "change-me-admin"    # admin console token
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: boxlyd
+  namespace: ongo
+  labels: { app: boxlyd }
+spec:
+  replicas: 1                    # single instance (state lives in k8s + the ongo-config ConfigMap)
+  selector: { matchLabels: { app: boxlyd } }
+  template:
+    metadata:
+      labels: { app: boxlyd }
+    spec:
+      serviceAccountName: ongod  # the RBAC-bound SA from 00-namespace-rbac.yaml — boxlyd uses
+                                 # in-cluster config to manage pods/pvc/cm/secrets/deployments/exec
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: boxlyd
+          image: REGISTRY/boxly:latest   # ← Devtron CI sets this
+          ports: [{ containerPort: 8080, name: http }]
+          envFrom:
+            - configMapRef: { name: boxlyd-config }
+            - secretRef: { name: boxlyd-secrets }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+          readinessProbe: { httpGet: { path: /healthz, port: 8080 }, initialDelaySeconds: 3 }
+          livenessProbe:  { httpGet: { path: /healthz, port: 8080 }, periodSeconds: 15 }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: "1",  memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: boxlyd
+  namespace: ongo
+  labels: { app: boxlyd }
+spec:
+  selector: { app: boxlyd }
+  ports:
+    - { name: http, port: 80, targetPort: 8080 }
+# Expose externally via an Ingress (or Service type LoadBalancer) so users reach
+# the TUI server, /admin and /pools. Admin/pools are HTTP; put TLS at the ingress.
