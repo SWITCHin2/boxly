@@ -6,3 +6,7 @@
 # local noise
 *.log
 .DS_Store
+
+# IDE
+.idea/
+.vscode/
