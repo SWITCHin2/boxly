@@ -43,8 +43,8 @@ spec:
     metadata:
       labels: { app: boxlyd }
     spec:
-      serviceAccountName: ongod  # the RBAC-bound SA from 00-namespace-rbac.yaml — boxlyd uses
-                                 # in-cluster config to manage pods/pvc/cm/secrets/deployments/exec
+      serviceAccountName: boxlyd # cluster-scoped SA from 01-boxlyd-rbac.yaml — can create
+                                 # namespaces + manage pods/pvc/cm/secrets/deployments/exec/netpol
       securityContext:
         runAsNonRoot: true
         seccompProfile: { type: RuntimeDefault }
