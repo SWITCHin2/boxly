@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
-	"syscall"
+	"strings"
 
 	"github.com/coder/websocket"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+
+	"github.com/SWITCHin2/boxly/internal/template"
 )
 
 func newSSHCmd() *cobra.Command {
@@ -49,8 +50,31 @@ func newExecCmd() *cobra.Command {
 // (Alpine), instead of falling through to sh.
 var robustShell = []string{"/bin/sh", "-c", "if command -v bash >/dev/null 2>&1; then exec bash; else exec sh; fi"}
 
+// shellBody is the bash-or-sh fallthrough appended after any per-box setup.
+const shellBody = "if command -v bash >/dev/null 2>&1; then exec bash; else exec sh; fi"
+
+// runShell opens an interactive shell on a box. For AI sandbox boxes it loads
+// the user's Claude key into the session (resolving it from env, or prompting)
+// and prints the themed welcome banner.
 func runShell(ctx context.Context, id string) error {
-	conn, err := newClient().ExecConn(ctx, id, robustShell, true)
+	return connectShell(ctx, id, "")
+}
+
+// connectShell is runShell with an optionally pre-supplied Claude token (the
+// launcher passes the one it collected so the user isn't asked twice).
+func connectShell(ctx context.Context, id, claudeToken string) error {
+	shellCmd := robustShell
+
+	// AI boxes get the Claude key + the themed welcome.
+	if vm, err := newClient().Get(ctx, id); err == nil && vm.Template == template.AITemplate {
+		if claudeToken == "" {
+			claudeToken = resolveClaudeToken()
+		}
+		shellCmd = aiShell(claudeToken)
+		fmt.Fprint(os.Stderr, renderAIWelcome(id))
+	}
+
+	conn, err := newClient().ExecConn(ctx, id, shellCmd, true)
 	if err != nil {
 		return err
 	}
@@ -63,15 +87,8 @@ func runShell(ctx context.Context, id string) error {
 			defer term.Restore(fd, oldState)
 		}
 		sendResize(ctx, conn, fd)
-
-		winch := make(chan os.Signal, 1)
-		signal.Notify(winch, syscall.SIGWINCH)
-		defer signal.Stop(winch)
-		go func() {
-			for range winch {
-				sendResize(ctx, conn, fd)
-			}
-		}()
+		stop := watchResize(ctx, conn, fd)
+		defer stop()
 	}
 
 	err = pump(ctx, conn, os.Stdin, os.Stdout)
@@ -143,4 +160,43 @@ func pump(ctx context.Context, conn *websocket.Conn, stdin io.Reader, stdout io.
 func isClosed(err error) bool {
 	status := websocket.CloseStatus(err)
 	return status == websocket.StatusNormalClosure || status == websocket.StatusGoingAway
+}
+
+// aiShell builds the entry command for an AI sandbox box: it puts the
+// pre-installed claude binary on PATH and, when a key is supplied, exports it
+// into the session so `claude` is authenticated immediately. The key lives only
+// in this shell process — it is never written to disk or sent to the server.
+func aiShell(token string) []string {
+	pre := "export PATH=/work/.npm-global/bin:$PATH; "
+	if token != "" {
+		pre += "export ANTHROPIC_API_KEY=" + shellQuote(token) + "; "
+	}
+	return []string{"/bin/sh", "-c", pre + shellBody}
+}
+
+// resolveClaudeToken finds the user's Claude key without storing it: first from
+// the environment, otherwise by prompting once (input hidden) when on a TTY.
+func resolveClaudeToken() string {
+	for _, k := range []string{"ANTHROPIC_API_KEY", "BOXLY_CLAUDE_TOKEN", "CLAUDE_TOKEN"} {
+		if v := strings.TrimSpace(os.Getenv(k)); v != "" {
+			return v
+		}
+	}
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		return ""
+	}
+	fmt.Fprint(os.Stderr, aiSky.Render("  Paste your Claude API key (hidden, leave blank to skip): "))
+	b, err := term.ReadPassword(fd)
+	fmt.Fprintln(os.Stderr)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(b))
+}
+
+// shellQuote wraps s in single quotes for safe use in `sh -c`, escaping any
+// embedded single quotes.
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }

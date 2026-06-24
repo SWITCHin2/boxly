@@ -29,6 +29,7 @@ func runWizard(ctx context.Context) error {
 	tmplID := template.Default
 	vmType := string(api.TypeSandbox)
 	name := ""
+	claudeKey := ""
 
 	cat := template.All()
 	opts := make([]huh.Option[string], 0, len(cat))
@@ -53,19 +54,30 @@ func runWizard(ctx context.Context) error {
 				Title("Name (optional)").
 				Value(&name),
 		),
+		// Only shown for the AI sandbox: the Claude key is collected here ("in
+		// the second step") and loaded into the box session only — never stored.
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Claude API key").
+				Description("Powers `claude` inside the box. Used for this session only, never stored.").
+				EchoMode(huh.EchoModePassword).
+				Value(&claudeKey),
+		).WithHideFunc(func() bool { return tmplID != template.AITemplate }),
 	)
 	if err := form.Run(); err != nil {
 		return err // includes user abort (Ctrl-C)
 	}
 
-	return provisionAndConnect(ctx, api.CreateRequest{Template: tmplID, Type: api.VMType(vmType), Name: name})
+	return provisionAndConnect(ctx, api.CreateRequest{Template: tmplID, Type: api.VMType(vmType), Name: name}, claudeKey)
 }
 
 var readyStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#00D7AF"))
 
 // provisionAndConnect creates a box behind a colorful spinner, then drops the
 // user into its shell. Shared by the wizard and `vm create --connect`.
-func provisionAndConnect(ctx context.Context, req api.CreateRequest) error {
+// claudeToken is non-empty only for the AI sandbox; it is handed to the shell
+// session and never stored.
+func provisionAndConnect(ctx context.Context, req api.CreateRequest, claudeToken string) error {
 	steps := []string{
 		"spinning up your box…",
 		"unpacking the goodies…",
@@ -85,9 +97,13 @@ func provisionAndConnect(ctx context.Context, req api.CreateRequest) error {
 		return err
 	}
 
-	tmpl, _ := template.Get(vm.Template)
-	fmt.Fprintf(os.Stderr, "%s  %s\n", readyStyle.Render("  "+vm.ID+" ready"), tmpl.WelcomeMsg)
-	return runShell(ctx, vm.ID)
+	// AI boxes print their own themed banner inside connectShell; everything
+	// else gets the one-line template welcome.
+	if vm.Template != template.AITemplate {
+		tmpl, _ := template.Get(vm.Template)
+		fmt.Fprintf(os.Stderr, "%s  %s\n", readyStyle.Render("  "+vm.ID+" ready"), tmpl.WelcomeMsg)
+	}
+	return connectShell(ctx, vm.ID, claudeToken)
 }
 
 // waitReadySilent polls until the box reports Running (no output of its own —

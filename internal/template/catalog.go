@@ -109,7 +109,33 @@ fi`,
 		Image:      "node:22-slim",
 		WelcomeMsg: "node & npm ready. /work is yours. Tip: npm init -y",
 	},
+	{
+		ID: AITemplate, Title: "AI Sandbox", Desc: "quick AI tasks, powered by Claude", Category: "AI",
+		Image:   "node:22-slim",
+		WarmMin: 1, // keep one ready so Claude is instant
+		// Pre-install Claude Code while the box is still warm, into the writable
+		// /work ($HOME) prefix so the non-root box user can run `claude` the
+		// instant it is claimed. Egress is allowed (only ingress is denied), so
+		// the npm registry is reachable; if it ever isn't, the box still opens
+		// and the user can install on first use.
+		SetupScript: `set -e
+export HOME=/work
+mkdir -p /work/.npm-global
+npm config set prefix /work/.npm-global >/dev/null 2>&1 || true
+printf '%s\n' 'export PATH=/work/.npm-global/bin:$PATH' > /work/.bashrc
+if npm install -g @anthropic-ai/claude-code >/work/.claude-install.log 2>&1; then
+  echo "claude-code ready" >> /work/.claude-install.log
+else
+  echo "offline: run  npm install -g @anthropic-ai/claude-code  to enable claude" > /work/.claude-install.log
+fi`,
+		WelcomeMsg: "AI sandbox powered by Claude. Type  claude  to begin.",
+	},
 }
 
 // Default is used when no template is specified.
 const Default = "normal"
+
+// AITemplate is the id of the Claude-powered AI sandbox box type. The CLI
+// special-cases it to load the user's Claude key into the session and to print
+// the AI welcome banner.
+const AITemplate = "ai-sandbox"
